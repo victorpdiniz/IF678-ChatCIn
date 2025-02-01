@@ -28,18 +28,32 @@ while True:
     # Post file to server
     if action == 'post':
         content = FileManager.actFile(fileName, 'get')
-
+        fileSize = str(len(content))
         # Sends file to the server
-        message = f'{action} {fileName} {content}'
+        message = f'{action} {fileName} {fileSize}'
         clientSocket.sendto(message.encode(), serverAddress)
+
+        # Envia o arquivo em partes
+        for i in range(0, int(fileSize), buffer_size):
+            chunk = content[i:i+buffer_size]
+            clientSocket.sendto(chunk, serverAddress)
+
+        #response, _ = clientSocket.recvfrom(buffer_size)
+        #print(f'Server response: {response.decode()}')
 
     # Get file from server
     elif action == 'get':
         message = f'{action} {fileName} None'
         clientSocket.sendto(message.encode(), serverAddress)
 
-        data, serverAddress = clientSocket.recvfrom(buffer_size)
-        response = data.decode()
+        message, serverAddress = clientSocket.recvfrom(buffer_size)
+        fileSize = int(message.decode()) 
+        # Recebe o arquivo em partes
+        received_data = b""
+        while len(received_data) < fileSize:
+            chunk, _ = clientSocket.recvfrom(buffer_size)
+            received_data += chunk
+        response = received_data.decode()
 
         if response != 'None':
             fileName, content = response.split(" ", 1)

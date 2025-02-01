@@ -27,27 +27,28 @@ class FileManager:
             if type == 'txt':
                 return Interpreter.txtToMsg(fileName)
             elif type == 'pdf':
-                pass
+                return Interpreter.pdfToMsg(fileName)
             elif type == 'mp3':
                 pass
             elif type == 'mp4':
                 pass
             elif type == 'png':
-                pass
+                return Interpreter.pngToMsg(fileName)
             elif type == 'jpeg':
-                pass
+                return Interpreter.jpegToMsg(fileName)
             
         elif action == 'post':
             if type == 'txt':
                 return Publisher.msgToTxt(fileName, file)
             elif type == 'pdf':
-                pass
+                return Publisher.msgToPdf(fileName,file)
             elif type == 'mp3':
                 pass
             elif type == 'mp4':
                 pass
             elif type == 'png':
-                pass
+                return Publisher.msgToPng(fileName,file)
             elif type == 'jpeg':
-                pass
+                return Publisher.msgToJpeg(fileName, file)
+        
             

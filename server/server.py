@@ -14,16 +14,33 @@ print('The server is ready.')
 while True:
     
     # Receive message and decode
-    file, clientAddress = serverSocket.recvfrom(buffer_size)
-    action, fileName, content = file.decode().split(" ", 2)
-    
-    print(f'Command received from client: {action} {fileName}.')
+    header, clientAddress = serverSocket.recvfrom(buffer_size) 
+    header = header.decode() 
+    action, fileName, fileSize = header.split(" ", 2)
+    fileSize = int(fileSize) # Converte o tamanho do arquivo para inteiro
+    returned={}
+    print(f'Command received from client: {action} {fileName}({fileSize} bytes).')
     
     if action == 'close':
         break
-    
+    elif action == 'post':
+    # Recebe o arquivo em partes
+        received_data = b""
+        while len(received_data) < fileSize:
+            chunk, _ = serverSocket.recvfrom(buffer_size)
+            received_data += chunk
+        returned = FileManager.actFile(fileName, action, received_data)
+    elif action =='get':
+        content = FileManager.actFile(fileName, 'get')
+        fileSize = str(len(content))
+
+        message = f'{fileSize}'
+        serverSocket.sendto(message.encode(), clientAddress)
+
+        
+
     # Act on file
-    returned = FileManager.actFile(fileName, action, content)
+    
     print(f'Command accomplished, send response to: {clientAddress}.')
     
     # If there is a file to send back
