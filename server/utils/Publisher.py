@@ -17,11 +17,21 @@ class Publisher:
             print(f"Server: O arquivo '{fileName}' já existe.")
             raise
     
-    def msgToMp3(fileName: str, file: str) -> None:
-        pass
+    def msgToMp3(fileName: str, file: bytes) -> None:
+        try:
+            with open(fileName, 'xb') as localFile:
+                localFile.write(file)
+        except FileExistsError:
+            print(f"Server: O arquivo '{fileName}' já existe.")
+            raise
         
-    def msgToMp4(fileName: str, file: str) -> None:
-        pass
+    def msgToMp4(fileName: str, file: bytes) -> None:
+        try:
+            with open(fileName, 'xb') as localFile:
+                localFile.write(file)
+        except FileExistsError:
+            print(f"Server: O arquivo '{fileName}' já existe.")
+            raise
     
     def msgToPng(fileName: str, file: bytes) -> None:
         try:

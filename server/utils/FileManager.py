@@ -29,9 +29,9 @@ class FileManager:
             elif type == 'pdf':
                 return Interpreter.pdfToMsg(fileName)
             elif type == 'mp3':
-                pass
+                return Interpreter.mp3ToMsg(fileName)
             elif type == 'mp4':
-                pass
+                return Interpreter.mp4ToMsg(fileName)
             elif type == 'png':
                 return Interpreter.pngToMsg(fileName)
             elif type == 'jpeg':
@@ -43,10 +43,12 @@ class FileManager:
             elif type == 'pdf':
                 return Publisher.msgToPdf(fileName,file)
             elif type == 'mp3':
-                pass
+                return Publisher.msgToMp3(fileName,file)
             elif type == 'mp4':
-                pass
+                return Publisher.msgToMp4(fileName,file)
             elif type == 'png':
                 return Publisher.msgToPng(fileName,file)
             elif type == 'jpeg':
-                return Publisher.msgToJpeg(fileName, file)   
+                return Publisher.msgToJpeg(fileName, file)
+        
+            
