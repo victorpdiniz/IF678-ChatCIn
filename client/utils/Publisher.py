@@ -1,6 +1,7 @@
 class Publisher:
     
     def msgToTxt(fileName: str, file: str) -> None:
+        file = file.decode()
         localFile = open(fileName, 'x')
         if not localFile:
             print(f"Server: Couldn't create {fileName}.")

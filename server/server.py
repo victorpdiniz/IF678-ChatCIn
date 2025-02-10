@@ -1,6 +1,6 @@
 from socket import *
 from utils.FileManager import FileManager
-
+import time
 serverPort = 1057
 buffer_size = 1024
 host = 'localhost'
@@ -38,11 +38,12 @@ while True:
 
         message = f'{fileSize}'
         serverSocket.sendto(message.encode(), clientAddress)
-
+        time.sleep(0.5) # Delay to avoid packet loss
         # Envia o arquivo em partes
         for i in range(0, int(fileSize), buffer_size):
             chunk = content[i:i+buffer_size]
             serverSocket.sendto(chunk, clientAddress)
+            time.sleep(0.01) # Delay to avoid packet loss (TEMPORARY)
 
         
 

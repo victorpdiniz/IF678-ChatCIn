@@ -1,5 +1,6 @@
 from socket import *
 from utils.FileManager import FileManager
+import time
 
 serverPort = 1057
 clientPort = 1058
@@ -32,11 +33,12 @@ while True:
         # Sends file to the server
         message = f'{action} {fileName} {fileSize}'
         clientSocket.sendto(message.encode(), serverAddress)
-
+        time.sleep(0.5) # Delay to avoid packet loss
         # Envia o arquivo em partes
         for i in range(0, int(fileSize), buffer_size):
             chunk = content[i:i+buffer_size]
             clientSocket.sendto(chunk, serverAddress)
+            time.sleep(0.01) # Delay to avoid packet loss
 
         #response, _ = clientSocket.recvfrom(buffer_size)
         #print(f'Server response: {response.decode()}')
@@ -54,10 +56,9 @@ while True:
         while len(received_data) < fileSize:
             chunk, _ = clientSocket.recvfrom(buffer_size)
             received_data += chunk
-        response = received_data.decode()
-        print(response)
+        response = received_data # Removed decode() outside Publisher.py
         if response != 'None':
-            #content = response.split(" ", 1)
+            #content = response.split(" ", 1) Removed, no need to split
             content = response
             print(f'File "{fileName}" with content: {content}')
             FileManager.actFile(fileName, 'post', content)
