@@ -1,6 +1,17 @@
 from socket import *
-from utils.FileManager import FileManager
 import time
+
+def get(fileName: str)-> bytes:
+    with open('files/' + fileName, 'rb') as imageFile:
+        data = imageFile.read()
+    return data
+
+def post(fileName: str, file: bytes) -> None:
+    try:
+        with open('files/downloaded_' + fileName, 'xb') as localFile:
+            localFile.write(file)
+    except FileExistsError:
+        raise ValueError
 
 serverPort = 1057
 clientPort = 1058
@@ -28,12 +39,14 @@ while True:
     
     # Post file to server
     if action == 'post':
-        content = FileManager.actFile(fileName, 'get')
+        content = get(fileName)
         fileSize = str(len(content))
+        
         # Sends file to the server
         message = f'{action} {fileName} {fileSize}'
         clientSocket.sendto(message.encode(), serverAddress)
         time.sleep(0.5) # Delay to avoid packet loss
+        
         # Envia o arquivo em partes
         for i in range(0, int(fileSize), buffer_size):
             chunk = content[i:i+buffer_size]
@@ -51,17 +64,19 @@ while True:
         message, serverAddress = clientSocket.recvfrom(buffer_size)
         fileSize = int(message.decode()) 
         print(f'File "{fileName}" is {fileSize} bytes.')
+        
         # Recebe o arquivo em partes
         received_data = b""
         while len(received_data) < fileSize:
             chunk, _ = clientSocket.recvfrom(buffer_size)
             received_data += chunk
         response = received_data # Removed decode() outside Publisher.py
+        
         if response != 'None':
             #content = response.split(" ", 1) Removed, no need to split
             content = response
-            print(f'File "{fileName}" with content: {content}')
-            FileManager.actFile(fileName, 'post', content)
+            # print(f'File "{fileName}" with content: {content}')
+            post(fileName, content)
             
             print(f'File "{fileName}" downloaded successfully.')
 

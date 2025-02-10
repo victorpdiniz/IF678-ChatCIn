@@ -1,7 +1,7 @@
 ## IF678-ChatCIn
 Projeto da cadeira de Infraestrutura de Comunicação do CIn-UFPE para implementação de um sistema de chat em grupo (ChatCIn) usando protocolo de comunicação UDP. O projeto está dividido em duas partes principais:
 
-- **Server**: Contém o código do servidor em Python, juntamente com as pastas `utils` e `files`, que auxiliam no gerenciamento dos arquivos recebidos e enviados.
+- **Server**: Contém o código do servidor em Python, juntamente com a pasta `files`, que guardam arquivos recebidos e enviados.
 - **Client**: Contém o código do cliente em Python, além das pastas `utils` e `files` específicas para a comunicação com o servidor.
 
 Cada tipo de arquivo terá um fluxo de publicação e recebimento separado, sendo tratado por arquivos específicos dentro do diretório `utils`.
@@ -14,20 +14,13 @@ Cada tipo de arquivo terá um fluxo de publicação e recebimento separado, send
 📁 IF678-ChatCIn
 │
 ├── 📁 server
-│   ├── server.py  # Código principal do servidor
-│   ├── 📁 utils
-│   │   ├── 📁 Publisher.py  # Responsável pela publicação
-        ├── 📁 FileManager  # Responsável pelo gerenciamento
-│   │   ├── 📁 Interpreter.py  # Responsável pelo recebimento
 │   ├── 📁 files  # Armazena os arquivos do servidor
+│   ├── server.py  # Código principal do servidor
 │
 ├── 📁 client
-│   ├── client.py  # Código principal do cliente
-│   ├── 📁 utils
-│   │   ├── 📁 Publisher.py  # Responsável pela publicação
-        ├── 📁 FileManager  # Responsável pelo gerenciamento
-│   │   ├── 📁 Interpreter.py  # Responsável pelo recebimento
 │   ├── 📁 files  # Armazena os arquivos do cliente
+│   ├── client.py  # Código principal do cliente
+│   
 ```
 
 ---
@@ -37,11 +30,11 @@ Cada membro da equipe será responsável por implementar a funcionalidade de pub
 
 | Membro        | Tipo de Arquivo | Status |
 |--------------|----------------|----------------|
-| João Marcelo | PDF            |       ❌       |
-| João Pedro   | MP3            |       ❌       |
-| Alberto      | MP4            |       ❌       |
-| Bruno        | PNG            |       ❌       |
-| Marco        | JPEG           |       ❌       |
+| João Marcelo | PDF            |       ✅       |
+| João Pedro   | MP3            |       ✅       |
+| Alberto      | MP4            |       ✅       |
+| Bruno        | PNG            |       ✅       |
+| Marco        | JPEG           |       ✅       |
 | Victor       | TXT            |       ✅       |
 
 Cada arquivo manipulado deve ser armazenado corretamente na pasta `files`, garantindo que o envio e recebimento de diferentes tipos de arquivos seja validado de forma independente.
@@ -52,10 +45,6 @@ Cada arquivo manipulado deve ser armazenado corretamente na pasta `files`, garan
 
 ### 📌 Para cada tipo de arquivo, deve-se:
 
-- [ ] Alterar a função em `server/utils/Publisher.py` para publicação do arquivo.
-- [ ] Alterar a função em `server/utils/Interpreter.py` para recebimento do arquivo.
-- [ ] Alterar a função em `client/utils/Publisher.py` para envio do arquivo.
-- [ ] Alterar a função em `client/utils/Interpreter.py` para recepção do arquivo.
 - [ ] Testar a publicação e recepção dos arquivos, garantindo que funcionam corretamente.
 - [ ] Cada arquivo deve ser salvo em `server/files` e `client/files` de forma independente.
 
@@ -81,7 +70,6 @@ Cada arquivo manipulado deve ser armazenado corretamente na pasta `files`, garan
 ## 🛠️ Tecnologias Utilizadas
 - **Python**
 - **UDP Sockets** (via `socket`)
-- **Manipulação de Arquivos** (via `os` e bibliotecas específicas como `PyPDF2` para PDFs)
 
 ---
 

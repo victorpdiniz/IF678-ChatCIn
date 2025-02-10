@@ -1,6 +1,18 @@
 from socket import *
-from utils.FileManager import FileManager
 import time
+
+def get(fileName: str)-> bytes:
+    with open('files/' + fileName, 'rb') as imageFile:
+        data = imageFile.read()
+    return data
+
+def post(fileName: str, file: bytes) -> None:
+    try:
+        with open('files/archived_' + fileName, 'xb') as localFile:
+            localFile.write(file)
+    except FileExistsError:
+        raise ValueError
+
 serverPort = 1057
 buffer_size = 1024
 host = 'localhost'
@@ -15,7 +27,8 @@ while True:
     
     # Receive message and decode
     header, clientAddress = serverSocket.recvfrom(buffer_size) 
-    header = header.decode() 
+    header = header.decode()
+
     action, fileName, fileSize = header.split(" ", 2)
     if fileSize != 'None':
         fileSize = int(fileSize) # Converte o tamanho do arquivo para inteiro
@@ -30,25 +43,22 @@ while True:
         while len(received_data) < fileSize:
             chunk, _ = serverSocket.recvfrom(buffer_size)
             received_data += chunk
-        returned = FileManager.actFile(fileName, action, received_data)
+        returned = post(fileName, received_data)
         
     elif action =='get':
-        content = FileManager.actFile(fileName, 'get')
+        content = get(fileName)
         fileSize = str(len(content))
 
         message = f'{fileSize}'
         serverSocket.sendto(message.encode(), clientAddress)
         time.sleep(0.5) # Delay to avoid packet loss
+        
         # Envia o arquivo em partes
         for i in range(0, int(fileSize), buffer_size):
             chunk = content[i:i+buffer_size]
             serverSocket.sendto(chunk, clientAddress)
             time.sleep(0.01) # Delay to avoid packet loss (TEMPORARY)
 
-        
-
-    # Act on file
-    
     print(f'Command accomplished, send response to: {clientAddress}.')
     
     # If there is a file to send back
@@ -58,6 +68,5 @@ while True:
     
     else:
         serverSocket.sendto('None'.encode(), clientAddress)
-    
     
 serverSocket.close()
