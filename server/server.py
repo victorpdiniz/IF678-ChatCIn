@@ -17,7 +17,8 @@ while True:
     header, clientAddress = serverSocket.recvfrom(buffer_size) 
     header = header.decode() 
     action, fileName, fileSize = header.split(" ", 2)
-    fileSize = int(fileSize) # Converte o tamanho do arquivo para inteiro
+    if fileSize != 'None':
+        fileSize = int(fileSize) # Converte o tamanho do arquivo para inteiro
     returned={}
     print(f'Command received from client: {action} {fileName}({fileSize} bytes).')
     
@@ -30,12 +31,18 @@ while True:
             chunk, _ = serverSocket.recvfrom(buffer_size)
             received_data += chunk
         returned = FileManager.actFile(fileName, action, received_data)
+        
     elif action =='get':
         content = FileManager.actFile(fileName, 'get')
         fileSize = str(len(content))
 
         message = f'{fileSize}'
         serverSocket.sendto(message.encode(), clientAddress)
+
+        # Envia o arquivo em partes
+        for i in range(0, int(fileSize), buffer_size):
+            chunk = content[i:i+buffer_size]
+            serverSocket.sendto(chunk, clientAddress)
 
         
 

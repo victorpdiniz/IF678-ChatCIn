@@ -48,16 +48,18 @@ while True:
 
         message, serverAddress = clientSocket.recvfrom(buffer_size)
         fileSize = int(message.decode()) 
+        print(f'File "{fileName}" is {fileSize} bytes.')
         # Recebe o arquivo em partes
         received_data = b""
         while len(received_data) < fileSize:
             chunk, _ = clientSocket.recvfrom(buffer_size)
             received_data += chunk
         response = received_data.decode()
-
+        print(response)
         if response != 'None':
-            fileName, content = response.split(" ", 1)
-            
+            #content = response.split(" ", 1)
+            content = response
+            print(f'File "{fileName}" with content: {content}')
             FileManager.actFile(fileName, 'post', content)
             
             print(f'File "{fileName}" downloaded successfully.')
