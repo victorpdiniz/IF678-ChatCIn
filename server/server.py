@@ -1,72 +1,85 @@
 from socket import *
-import time
 
-def get(fileName: str)-> bytes:
-    with open('files/' + fileName, 'rb') as imageFile:
-        data = imageFile.read()
-    return data
+# Constants
+SERVER_PORT = 1057
+BUFFER_SIZE = 1024
+HOST = 'localhost'
+SERVER_ADDRESS = (HOST, SERVER_PORT)
+FILE_DIRECTORY = 'files/'
+ARCHIVED_PREFIX = 'archived_'
 
-def post(fileName: str, file: bytes) -> None:
+
+def get(file_name: str) -> bytes:
+    """Retrieve file content from the server."""
+    with open(FILE_DIRECTORY + file_name, 'rb') as local_file:
+        return local_file.read()
+
+
+def post(file_name: str, file_data: bytes) -> None:
+    """Save file content to the server."""
     try:
-        with open('files/archived_' + fileName, 'xb') as localFile:
-            localFile.write(file)
+        with open(FILE_DIRECTORY + ARCHIVED_PREFIX + file_name, 'xb') as local_file:
+            local_file.write(file_data)
     except FileExistsError:
-        raise ValueError
+        raise ValueError("File already exists.")
 
-serverPort = 1057
-buffer_size = 1024
-host = 'localhost'
-serverAddress = (host, serverPort)
 
-serverSocket = socket(AF_INET, SOCK_DGRAM)
-serverSocket.bind(serverAddress)
-
-print('The server is ready.')
-
-while True:
-    
-    # Receive message and decode
-    header, clientAddress = serverSocket.recvfrom(buffer_size) 
+def handle_client_request(server_socket):
+    """Process incoming client requests."""
+    header, client_address = server_socket.recvfrom(BUFFER_SIZE)
     header = header.decode()
 
-    action, fileName, fileSize = header.split(" ", 2)
-    if fileSize != 'None':
-        fileSize = int(fileSize) # Converte o tamanho do arquivo para inteiro
-    returned={}
-    print(f'Command received from client: {action} {fileName}({fileSize} bytes).')
-    
-    if action == 'close':
-        break
-    elif action == 'post':
-    # Recebe o arquivo em partes
-        received_data = b""
-        while len(received_data) < fileSize:
-            chunk, _ = serverSocket.recvfrom(buffer_size)
-            received_data += chunk
-        returned = post(fileName, received_data)
-        
-    elif action =='get':
-        content = get(fileName)
-        fileSize = str(len(content))
+    action, file_name, file_size = header.split(" ", 2)
+    file_size = None if file_size == 'None' else int(file_size)
 
-        message = f'{fileSize}'
-        serverSocket.sendto(message.encode(), clientAddress)
-        time.sleep(0.5) # Delay to avoid packet loss
-        
-        # Envia o arquivo em partes
-        for i in range(0, int(fileSize), buffer_size):
-            chunk = content[i:i+buffer_size]
-            serverSocket.sendto(chunk, clientAddress)
-            time.sleep(0.01) # Delay to avoid packet loss (TEMPORARY)
+    print(f'Command received from client: {action} {file_name} ({file_size} bytes).')
 
-    print(f'Command accomplished, send response to: {clientAddress}.')
+    if action == 'post':
+        received_data = receive_file(server_socket, file_size)
+        post(file_name, received_data)
+    elif action == 'get':
+        send_file(server_socket, client_address, file_name)
+    elif action == 'close':
+        return False
+
+    print(f'Command accomplished, response sent to: {client_address}.')
+    return True
+
+
+def receive_file(server_socket, file_size):
+    """Receive file data in chunks."""
+    received_data = b""
+    while len(received_data) < file_size:
+        chunk, _ = server_socket.recvfrom(BUFFER_SIZE)
+        received_data += chunk
+    return received_data
+
+
+def send_file(server_socket, client_address, file_name):
+    """Send file data to the client in chunks."""
+    content = get(file_name)
+    file_size = str(len(content))
+
+    server_socket.sendto(file_size.encode(), client_address)
+
+    for i in range(0, len(content), BUFFER_SIZE):
+        chunk = content[i:i+BUFFER_SIZE]
+        server_socket.sendto(chunk, client_address)
+
+
+def main():
+    """Initialize and run the server."""
+    server_socket = socket(AF_INET, SOCK_DGRAM)
+    server_socket.bind(SERVER_ADDRESS)
+
+    print('The server is ready.')
+    running = True
     
-    # If there is a file to send back
-    if returned is not None:
-        returned = f'{fileName} {returned}'
-        serverSocket.sendto(returned.encode(), clientAddress)
+    while running:
+        running = handle_client_request(server_socket)
     
-    else:
-        serverSocket.sendto('None'.encode(), clientAddress)
-    
-serverSocket.close()
+    server_socket.close()
+
+
+if __name__ == "__main__":
+    main()
