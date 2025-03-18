@@ -1,85 +1,96 @@
 from socket import *
+from rdt import RDT
 
 # Constants
 SERVER_PORT = 1057
+CLIENT_PORT = 1058
 BUFFER_SIZE = 1024
+SEQ_NUM_SIZE = 50
+ACK_BIT_SIZE = 50
 HOST = 'localhost'
 SERVER_ADDRESS = (HOST, SERVER_PORT)
+CLIENT_ADDRESS = (HOST, CLIENT_PORT)
 FILE_DIRECTORY = 'files/'
 ARCHIVED_PREFIX = 'archived_'
 
+class Server:
+    def __init__(self):
+        """Initialize the server socket and bind it."""
+        self.server_socket = socket(AF_INET, SOCK_DGRAM)
+        self.server_socket.bind(SERVER_ADDRESS)
+        print('The server is ready.')
 
-def get(file_name: str) -> bytes:
-    """Retrieve file content from the server."""
-    with open(FILE_DIRECTORY + file_name, 'rb') as local_file:
-        return local_file.read()
-
-
-def post(file_name: str, file_data: bytes) -> None:
-    """Save file content to the server."""
-    try:
-        with open(FILE_DIRECTORY + ARCHIVED_PREFIX + file_name, 'xb') as local_file:
+    def open_file(self, file_name: str) -> bytes:
+        """Retrieve file content from the local storage."""
+        with open(FILE_DIRECTORY + file_name, 'rb') as local_file:
+            return local_file.read()
+    
+    def save_file(self, file_name: str, file_data: bytes) -> None:
+        """Save file content to the local storage."""
+        with open(FILE_DIRECTORY + ARCHIVED_PREFIX + file_name, 'wb') as local_file:
             local_file.write(file_data)
-    except FileExistsError:
-        raise ValueError("File already exists.")
 
+    def handle_client_request(self, reliable_data_transfer: RDT) -> bool:
+        """Process incoming client requests."""
+        rdt = reliable_data_transfer
+        header = rdt.receive(b'', 0)
+        action, file_name, file_size = header.decode().split(' ', 2)
+        file_size = None if file_size == 'None' else int(file_size)
 
-def handle_client_request(server_socket):
-    """Process incoming client requests."""
-    header, client_address = server_socket.recvfrom(BUFFER_SIZE)
-    header = header.decode()
+        print(f'Command received from client: {action} {file_name} ({file_size} bytes).')
+        if action == 'post':
+            # Receive file data
+            received_data = b''
+            while len(received_data) < file_size:
+                chunk = rdt.receive(b'', 0)
+                received_data += chunk
 
-    action, file_name, file_size = header.split(" ", 2)
-    file_size = None if file_size == 'None' else int(file_size)
+            if received_data:
+                self.save_file(file_name, received_data)
+                message = rdt.receive(b'', 0)
+                if message == 'True'.encode():
+                    print(f'File "{file_name}" uploaded successfully.')
+                else:
+                    print(f'File "{file_name}" could not be uploaded.')
+            
+            self.save_file(file_name, received_data)
+            
+        elif action == 'get':
+            content = self.open_file(file_name)
+            file_size = str(len(content))
+            message = f'{file_size}'
+            
+            # Send file information
+            rdt.send(message.encode(), CLIENT_ADDRESS, 0)
+            
+            # Send file data
+            print('Sending file data...')
+            for i in range(0, len(content), BUFFER_SIZE - (SEQ_NUM_SIZE + ACK_BIT_SIZE)):
+                chunk = content[i:i+(BUFFER_SIZE - (SEQ_NUM_SIZE + ACK_BIT_SIZE))]
+                rdt.send(chunk, CLIENT_ADDRESS, 0)
+            print('File data sent. Sending confirmation message...')
+            
+            # Send confirmation message
+            message = 'True'.encode()
+            rdt.send(message, CLIENT_ADDRESS, 0)
+            print(f'File "{file_name}" uploaded successfully.')
+            
+        elif action == 'close':
+            return False
 
-    print(f'Command received from client: {action} {file_name} ({file_size} bytes).')
+        print(f'Command accomplished, response sent to: {CLIENT_ADDRESS}.')
+        rdt.send('True'.encode(), CLIENT_ADDRESS, 0)
+        return True
 
-    if action == 'post':
-        received_data = receive_file(server_socket, file_size)
-        post(file_name, received_data)
-    elif action == 'get':
-        send_file(server_socket, client_address, file_name)
-    elif action == 'close':
-        return False
-
-    print(f'Command accomplished, response sent to: {client_address}.')
-    return True
-
-
-def receive_file(server_socket, file_size):
-    """Receive file data in chunks."""
-    received_data = b""
-    while len(received_data) < file_size:
-        chunk, _ = server_socket.recvfrom(BUFFER_SIZE)
-        received_data += chunk
-    return received_data
-
-
-def send_file(server_socket, client_address, file_name):
-    """Send file data to the client in chunks."""
-    content = get(file_name)
-    file_size = str(len(content))
-
-    server_socket.sendto(file_size.encode(), client_address)
-
-    for i in range(0, len(content), BUFFER_SIZE):
-        chunk = content[i:i+BUFFER_SIZE]
-        server_socket.sendto(chunk, client_address)
-
-
-def main():
-    """Initialize and run the server."""
-    server_socket = socket(AF_INET, SOCK_DGRAM)
-    server_socket.bind(SERVER_ADDRESS)
-
-    print('The server is ready.')
-    running = True
-    
-    while running:
-        running = handle_client_request(server_socket)
-    
-    server_socket.close()
-
+    def run(self):
+        """Run the server loop to handle client requests."""
+        running = True
+        rdt = RDT(self.server_socket)
+        while running:
+            running = self.handle_client_request(rdt)
+        
+        self.server_socket.close()
 
 if __name__ == "__main__":
-    main()
+    server = Server()
+    server.run()
