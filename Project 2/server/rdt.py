@@ -1,30 +1,13 @@
 import socket
-import time
 import random
 
 # Constants
-SERVER_ADDRESS = ('localhost', 12345)
 BUFFER_SIZE = 1024
-
-# Generate random packet loss algorithm around 20% of the time
-def packet_loss():
-    return random.random() < 0.2
-
-def udp_client():
-    server_address = ('localhost', 12345)
-    message = 'This is the message. It will be repeated.'
-    
-    # Create a UDP socket
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    rdt = RDT(sock)
-
-    # Send data
-    a = 0
-    while a < 20:
-        print('-' * 60)
-        rdt.send_pkt(f'{message} {a}'.encode(), server_address)
-        a += 1
-    sock.close()
+SERVER_PORT = 1057
+CLIENT_PORT = 1058
+HOST = 'localhost'
+SERVER_ADDRESS = (HOST, SERVER_PORT)
+CLIENT_ADDRESS = (HOST, CLIENT_PORT)
 
 class RDT:
     def __init__(self, sockets: socket):
@@ -42,7 +25,7 @@ class RDT:
         """Reset the timer."""
         self.expected_bit = 0
         self.sender_address = None
-        self.timeout = 5
+        self.timeout = 1
         self.last_packet_received = None
         self.socket.settimeout(self.timeout)
         print('Timer and expected bit reset.')
@@ -83,7 +66,7 @@ class RDT:
         # Send data
         if not self.packet_loss():
             print(f'Packet {self.expected_bit} sent.')
-            self.socket.sendto(sndpkt, SERVER_ADDRESS)
+            self.socket.sendto(sndpkt, receiver_address)
         else:
             print(f'Packet {self.expected_bit} lost.')
 
@@ -125,20 +108,19 @@ class RDT:
             # Received wrong packet
             else:
                 print(f'Received packet {rcv_bit} expected packet {self.expected_bit}.')
-                self.rcv_packet()
-                return
-                
+                return self.rcv_packet()
 
         except socket.timeout:
             print(f'Timeout for packet {self.expected_bit}.')
             self.update_expected_bit()
-            self.send_ack(self.sender_address)
+            self.send_ack(CLIENT_ADDRESS)
             return self.rcv_packet()
         
     def rcv_ack(self, data: bytes) -> None:
         """Receive ACK from receiver."""
         try:
             message, sender_address = self.socket.recvfrom(BUFFER_SIZE)
+            self.sender_address = sender_address
             rcv_ack, rcv_bit, rcv_data = self.get_header(message)
             
             # Received packet expected ACK
@@ -174,8 +156,4 @@ class RDT:
             
         except socket.timeout:
             print(f'Timeout for ACK {self.expected_bit}.')
-            self.send_pkt(data, self.sender_address)
-
-
-if __name__ == '__main__':
-    udp_client()
+            self.send_pkt(data, CLIENT_ADDRESS)

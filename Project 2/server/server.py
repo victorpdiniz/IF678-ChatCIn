@@ -33,7 +33,8 @@ class Server:
     def handle_client_request(self, reliable_data_transfer: RDT) -> bool:
         """Process incoming client requests."""
         rdt = reliable_data_transfer
-        header = rdt.receive(b'', 0)
+        
+        header = rdt.rcv_packet()
         action, file_name, file_size = header.decode().split(' ', 2)
         file_size = None if file_size == 'None' else int(file_size)
 
@@ -42,44 +43,30 @@ class Server:
             # Receive file data
             received_data = b''
             while len(received_data) < file_size:
-                chunk = rdt.receive(b'', 0)
+                chunk = rdt.rcv_packet()
                 received_data += chunk
 
-            if received_data:
-                self.save_file(file_name, received_data)
-                message = rdt.receive(b'', 0)
-                if message == 'True'.encode():
-                    print(f'File "{file_name}" uploaded successfully.')
-                else:
-                    print(f'File "{file_name}" could not be uploaded.')
-            
             self.save_file(file_name, received_data)
             
         elif action == 'get':
             content = self.open_file(file_name)
             file_size = str(len(content))
-            message = f'{file_size}'
+            message = f'{file_size}'.encode()
             
             # Send file information
-            rdt.send(message.encode(), CLIENT_ADDRESS, 0)
-            
+            rdt.send_pkt(message, CLIENT_ADDRESS)
+
             # Send file data
             print('Sending file data...')
             for i in range(0, len(content), BUFFER_SIZE - (SEQ_NUM_SIZE + ACK_BIT_SIZE)):
                 chunk = content[i:i+(BUFFER_SIZE - (SEQ_NUM_SIZE + ACK_BIT_SIZE))]
-                rdt.send(chunk, CLIENT_ADDRESS, 0)
+                print(len(chunk))
+                rdt.send_pkt(chunk, CLIENT_ADDRESS)
             print('File data sent. Sending confirmation message...')
-            
-            # Send confirmation message
-            message = 'True'.encode()
-            rdt.send(message, CLIENT_ADDRESS, 0)
-            print(f'File "{file_name}" uploaded successfully.')
             
         elif action == 'close':
             return False
 
-        print(f'Command accomplished, response sent to: {CLIENT_ADDRESS}.')
-        rdt.send('True'.encode(), CLIENT_ADDRESS, 0)
         return True
 
     def run(self):

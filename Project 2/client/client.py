@@ -39,7 +39,7 @@ class Client:
             action = input('Enter action (get/post/close): ').strip().lower()
 
             if action == 'close':
-                rdt.send('close', SERVER_ADDRESS, 0)
+                rdt.send_pkt('close', SERVER_ADDRESS)
                 break
 
             file_name = input('Enter file name (with extension): ').strip()
@@ -48,32 +48,25 @@ class Client:
             if action == 'post':
                 content = self.open_file(file_name)
                 file_size = str(len(content))
-                message = f'{action} {file_name} {file_size}'
+                message = f'{action} {file_name} {file_size}'.encode()
+                
                 # Send file information
-                print(message)
-                rdt.send(message.encode(), SERVER_ADDRESS, 0)
+                rdt.send_pkt(message, SERVER_ADDRESS)
+                
                 # Send file data
                 for i in range(0, len(content), BUFFER_SIZE - (SEQ_NUM_SIZE + ACK_BIT_SIZE)):
                     chunk = content[i:i+(BUFFER_SIZE - (SEQ_NUM_SIZE + ACK_BIT_SIZE))]
-                    rdt.send(chunk, CLIENT_ADDRESS, 0)
-                
-                # Receive response
-                message = rdt.receive(b'', 0)
-                if message == 'True'.encode():
-                    print(f'File "{file_name}" uploaded successfully.')
-                else:
-                    print(f'File "{file_name}" could not be uploaded.')
-                
+                    rdt.send_pkt(chunk, CLIENT_ADDRESS)
             
             elif action == 'get':
                 message = f'{action} {file_name} None'
                 
                 # Send file information
                 print(f'Sent message: {message}')
-                rdt.send(message.encode(), SERVER_ADDRESS, 0)
+                rdt.send_pkt(message.encode(), SERVER_ADDRESS)
                 
                 # Receive file size
-                message = rdt.receive(b'', 0).decode()
+                message = rdt.rcv_packet().decode()
                 print(f'Received message: {message}')
                 file_size = int(message)
                 print(f'File "{file_name}" is {file_size} bytes.')
@@ -83,18 +76,10 @@ class Client:
                 received_data = b''
                 while len(received_data) < file_size:
                     print(len(received_data))
-                    chunk = rdt.receive(b'', 0)
+                    chunk = rdt.rcv_packet()
                     received_data += chunk
                     
                 print('File data received. Waiting for confirmation message...')
-                
-                # Receive confirmation message
-                # validation_message = rdt.receive(b'', 0).decode()
-                # print(validation_message)
-                # if validation_message == 'True':
-                #     print(f'File "{file_name}" downloaded successfully.')
-                # else:
-                #     print(f'File "{file_name}" could not be downloaded.')
                 
                 # Save file
                 self.save_file(file_name, received_data)
