@@ -4,10 +4,8 @@ import random
 # Constants
 BUFFER_SIZE = 1024
 SERVER_PORT = 1057
-CLIENT_PORT = 1058
 HOST = 'localhost'
 SERVER_ADDRESS = (HOST, SERVER_PORT)
-CLIENT_ADDRESS = (HOST, CLIENT_PORT)
 
 class RDT:
     def __init__(self, sockets: socket):
@@ -113,7 +111,7 @@ class RDT:
         except socket.timeout:
             print(f'Timeout for packet {self.expected_bit}.')
             self.update_expected_bit()
-            self.send_ack(CLIENT_ADDRESS)
+            self.send_ack(self.sender_address)
             return self.rcv_packet()
         
     def rcv_ack(self, data: bytes) -> None:
@@ -156,10 +154,5 @@ class RDT:
             
         except socket.timeout:
             print(f'Timeout for ACK {self.expected_bit}.')
-            self.send_pkt(data, CLIENT_ADDRESS)
+            self.send_pkt(data, self.sender_address)
             
-    def listen(self) -> bytes:
-        """Wait for a call to begin working."""
-        message, self.final_system = self.socket.recvfrom(BUFFER_SIZE)
-        self.send_ack(self.final_system)
-        return message

@@ -1,5 +1,6 @@
 from socket import *
 from rdt import RDT
+from threading import Thread
 
 # Constants
 SERVER_PORT = 1057
@@ -57,36 +58,67 @@ class Client:
             chunk = content[i:i+(BUFFER_SIZE - (SEQ_NUM_SIZE + ACK_BIT_SIZE))]
             rdt.send_pkt(chunk, CLIENT_ADDRESS)
     
+    def send_messages(self):
+        """Thread function to send messages to the server."""
+        while True:
+            message = input('Enter message to send: ').strip()
+            if message.lower() == 'exit':
+                print("Closing client...")
+                self.client_socket.close()
+                break
+            self.rdt.send_pkt(message.encode(), SERVER_ADDRESS)
+            
+    def receive_messages(self):
+        """Thread function to receive messages from the server."""
+        while True:
+            try:
+                message = self.rdt.rcv_packet().decode()
+                print(f"\nReceived message: {message}\nEnter message to send: ", end="")
+            except:
+                break
+            
+    
     def run(self):
         """Run the client loop to send and receive files."""
+        
+        send_thread = Thread(target=self.send_messages)
+        receive_thread = Thread(target=self.receive_messages)
+        
+        send_thread.start()
+        receive_thread.start()
+        
+        send_thread.join()
+        receive_thread.join()
+        
+        
         rdt = RDT(self.client_socket)
         
-        while True:
-            action = input('Enter action (get/post/close): ').strip().lower()
-            file_name = input('Enter file name (with extension): ').strip()
+        # while True:
+        #     action = input('Enter action (get/post/close): ').strip().lower()
+        #     file_name = input('Enter file name (with extension): ').strip()
 
-            # Post file to the server
-            if action == 'post':
-                content = self.open_file(file_name)
-                file_size = str(len(content))
-                message = f'{action} {file_name} {file_size}'.encode()
+        #     # Post file to the server
+        #     if action == 'post':
+        #         content = self.open_file(file_name)
+        #         file_size = str(len(content))
+        #         message = f'{action} {file_name} {file_size}'.encode()
                 
-                # Send type of action
-                rdt.send_pkt(message, SERVER_ADDRESS)
+        #         # Send type of action
+        #         rdt.send_pkt(message, SERVER_ADDRESS)
                 
-                # Send file data
-                self.send_file(content, rdt)
+        #         # Send file data
+        #         self.send_file(content, rdt)
             
-            elif action == 'get':
-                message = f'{action} {file_name} None'.encode()
-                print(f'Sent message: {message}')
-                rdt.send_pkt(message, SERVER_ADDRESS)
+        #     elif action == 'get':
+        #         message = f'{action} {file_name} None'.encode()
+        #         print(f'Sent message: {message}')
+        #         rdt.send_pkt(message, SERVER_ADDRESS)
                 
-                # Receive file
-                self.receive_file(rdt, file_name)
+        #         # Receive file
+        #         self.receive_file(rdt, file_name)
                 
-            else:
-                print('Invalid action. Use "get", "post", or "close".')
+        #     else:
+        #         print('Invalid action. Use "get", "post", or "close".')
 
         self.client_socket.close()
         

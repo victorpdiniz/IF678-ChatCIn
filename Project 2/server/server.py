@@ -29,7 +29,24 @@ class Server:
         """Save file content to the local storage."""
         with open(FILE_DIRECTORY + ARCHIVED_PREFIX + file_name, 'wb') as local_file:
             local_file.write(file_data)
+    
+    def receive_file(self, rdt: RDT, file_name: str, file_size: int) -> None:
+        """Receive file content."""
+        received_data = b''
+        while len(received_data) < file_size:
+            chunk = rdt.rcv_packet()
+            received_data += chunk
 
+        self.save_file(file_name, received_data)
+
+    def send_file(self, rdt: RDT, content: bytes) -> None:
+        print('Sending file data...')
+        for i in range(0, len(content), BUFFER_SIZE - (SEQ_NUM_SIZE + ACK_BIT_SIZE)):
+            chunk = content[i:i+(BUFFER_SIZE - (SEQ_NUM_SIZE + ACK_BIT_SIZE))]
+            print(len(chunk))
+            rdt.send_pkt(chunk, CLIENT_ADDRESS)
+        print('File data sent. Sending confirmation message...')
+        
     def handle_client_request(self, reliable_data_transfer: RDT) -> bool:
         """Process incoming client requests."""
         rdt = reliable_data_transfer
@@ -41,12 +58,7 @@ class Server:
         print(f'Command received from client: {action} {file_name} ({file_size} bytes).')
         if action == 'post':
             # Receive file data
-            received_data = b''
-            while len(received_data) < file_size:
-                chunk = rdt.rcv_packet()
-                received_data += chunk
-
-            self.save_file(file_name, received_data)
+            self.receive_file(rdt, file_name, file_size)
             
         elif action == 'get':
             content = self.open_file(file_name)
@@ -57,12 +69,7 @@ class Server:
             rdt.send_pkt(message, CLIENT_ADDRESS)
 
             # Send file data
-            print('Sending file data...')
-            for i in range(0, len(content), BUFFER_SIZE - (SEQ_NUM_SIZE + ACK_BIT_SIZE)):
-                chunk = content[i:i+(BUFFER_SIZE - (SEQ_NUM_SIZE + ACK_BIT_SIZE))]
-                print(len(chunk))
-                rdt.send_pkt(chunk, CLIENT_ADDRESS)
-            print('File data sent. Sending confirmation message...')
+            self.send_file(rdt, content)
             
         elif action == 'close':
             return False
