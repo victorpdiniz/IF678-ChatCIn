@@ -46,33 +46,29 @@ class Client:
     def list_cinners(self):
         """Lista usuários online."""
         response = self.send_command('list:cinners')
-        print(response)
+        print(f'cinners: {response}')
             
     def logout(self):
         """Sai do servidor."""  ### (Novo)
         response = self.send_command('logout')
-        print(response)
+        print(response + "\n")
         self.login_status = False
 
     def run(self):
         """Loop do cliente para entrada do usuário."""
         
-        if(self.login_status):
-            print('Comandos disponíveis:')
-            print('  logout')
-            print('  list:cinners (Lista usuários online)')
-            print('  create_group <nome> <chave>')
-            print('  chat_friend <nome_amigo> <mensagem>')
-            print('  chat_group <grupo> <chave> <mensagem>')
-            print('  close (Encerra conexão)')
-        else:
-            print('Comandos disponíveis:')
-            print('  login <username>')
-        
         while True:
-            command = input('Digite um comando: ').strip()
             
             if(self.login_status):
+                print('Comandos disponíveis:')
+                print('  logout')
+                print('  list:cinners (Lista usuários online)')
+                print('  create_group <nome> <chave>')
+                print('  chat_friend <nome_amigo> <mensagem>')
+                print('  chat_group <grupo> <chave> <mensagem>')
+                print('  close (Encerra conexão)')
+                command = input('Digite um comando: ').strip()    
+            
                 if command.startswith('chat_friend'):
                     _, friend, *msg = command.split()
                     self.chat_friend(friend, " ".join(msg))
@@ -90,6 +86,9 @@ class Client:
                     print('Comando inválido. Tente novamente.')
 
             else:
+                print('Comandos disponíveis:')
+                print('  login <username>')
+                command = input('Digite um comando: ').strip()
                 if command.startswith('login'):
                     _,username = command.split()
                     self.login(username)

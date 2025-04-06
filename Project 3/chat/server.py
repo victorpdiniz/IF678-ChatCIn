@@ -64,7 +64,8 @@ class Server:
                 return
             group_name, key, message_text = args[0], args[1], " ".join(args[2:])
             group = self.db.groups.get(group_name)
-            if group and group.key == key:
+            member = group.get(user_name)
+            if group and group.key == key and member:
                 for member in group.members:
                     if member != user_name:
                         self.rdt.send_pkt(f"[{user_name}@{group_name}] {message_text}".encode(), self.db.users[member].address)
