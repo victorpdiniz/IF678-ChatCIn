@@ -1,5 +1,7 @@
 from socket import *
 from rdt import RDT
+from threading import Thread
+
 
 # Constants
 SERVER_PORT = 1057
@@ -20,9 +22,14 @@ class Server:
         """Process incoming client requests."""
         rdt = server_rdt
         
-        content = rdt.rcv_pkt()
+        content, sender = rdt.rcv_pkt()
 
-        print(f'Received message: {content.decode()}')
+        print(f'Received message: {content}')
+        
+        # Broadcast the received message to all clients addresses except the sender in self.clients[addr]
+        for addr in rdt.clients:
+            if addr != sender:
+                rdt.send_pkt(content, addr)
 
 
     def run(self):

@@ -5,8 +5,6 @@ from threading import Thread
 # Constants
 SERVER_PORT = 1057
 BUFFER_SIZE = 1024
-SEQ_NUM_SIZE = 50
-ACK_BIT_SIZE = 50
 HOST = 'localhost'
 SERVER_ADDRESS = (HOST, SERVER_PORT)
 
