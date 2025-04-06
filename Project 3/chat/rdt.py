@@ -16,7 +16,7 @@ class RDT:
         self.sender_address = None
         self.expected_bit = 0
         self.timeout = 1
-        self.socket.settimeout(self.timeout)
+        #self.socket.settimeout(self.timeout)
         self.last_packet_received = None
     
     def reset(self) -> None:
@@ -28,7 +28,7 @@ class RDT:
         self.socket.settimeout(self.timeout)
     
     def packet_loss(self) -> bool:
-        return random.random() < 0.3
+        return random.random() < -1
     
     def is_duplicated(self, data: bytes) -> bool:
         return data == self.last_packet_received
@@ -73,7 +73,7 @@ class RDT:
         
         self.update_expected_bit()
     
-    def rcv_packet(self) -> tuple[bytes, tuple]:#alterei isso para tentar devolver o addr
+    def rcv_packet(self) -> tuple:#alterei isso para tentar devolver o addr
         """Receive packet from sender."""
         try:
             message, sender_address = self.socket.recvfrom(BUFFER_SIZE)
@@ -86,10 +86,10 @@ class RDT:
             elif self.is_expected_bit(rcv_bit):
                 self.send_ack(sender_address)
                 self.last_packet_received = rcv_data
-                return rcv_data,sender_address
+                return rcv_data, sender_address
             else:
                 print(f'Received packet {rcv_bit} expected packet {self.expected_bit}.')
-                return self.rcv_packet(),sender_address
+                return self.rcv_packet()
 
         except socket.timeout:
             self.update_expected_bit()

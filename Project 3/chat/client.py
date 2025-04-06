@@ -14,14 +14,17 @@ class Client:
         """Inicializa o cliente e o socket."""
         self.client_socket = socket(AF_INET, SOCK_DGRAM)
         self.client_socket.bind(CLIENT_ADDRESS)
-        self.rdt = RDT(self.client_socket)  ### (Novo: Instância de RDT armazenada como atributo)
+        self.rdt = RDT(self.client_socket) 
+        self.login_status = False 
         print('Cliente pronto.')
 
     def send_command(self, command):
-        """Envia um comando para o servidor e aguarda resposta."""  ### (Novo: Função genérica para envio de comandos)
+        """Envia um comando para o servidor e aguarda resposta."""  
         self.rdt.send_pkt(command.encode(), SERVER_ADDRESS)
-        response = self.rdt.rcv_packet().decode()
-        print(f'Servidor: {response}')
+            
+        response = self.rdt.rcv_packet()
+        response=response[0].decode()
+        return response
     
     def chat_friend(self, friend_name, message):
         """Envia mensagem privada para um amigo."""  ### (Novo)
@@ -33,48 +36,67 @@ class Client:
     
     def login(self, username):
         """Solicita login no servidor."""  ### (Novo)
-        self.send_command(f'login {username}')
+        response = self.send_command(f'login {username}')
+        if response == 'Nome já em uso.':
+            print(response)
+        else:
+            print(response)
+            self.login_status = True
     
+    def list_cinners(self):
+        """Lista usuários online."""
+        response = self.send_command('list:cinners')
+        print(response)
+            
     def logout(self):
         """Sai do servidor."""  ### (Novo)
-        self.send_command('logout')
+        response = self.send_command('logout')
+        print(response)
+        self.login_status = False
 
     def run(self):
         """Loop do cliente para entrada do usuário."""
-        print('Comandos disponíveis:')
-        print('  login <username>')
-        print('  logout')
-        print('  list:cinners (Lista usuários online)')
-        print('  create_group <nome> <chave>')
-        print('  chat_friend <nome_amigo> <mensagem>')
-        print('  chat_group <grupo> <chave> <mensagem>')
-        print('  close (Encerra conexão)')
-
+        
+        if(self.login_status):
+            print('Comandos disponíveis:')
+            print('  logout')
+            print('  list:cinners (Lista usuários online)')
+            print('  create_group <nome> <chave>')
+            print('  chat_friend <nome_amigo> <mensagem>')
+            print('  chat_group <grupo> <chave> <mensagem>')
+            print('  close (Encerra conexão)')
+        else:
+            print('Comandos disponíveis:')
+            print('  login <username>')
+        
         while True:
             command = input('Digite um comando: ').strip()
             
-            if command.startswith('chat_friend'):
-                _, friend, *msg = command.split()
-                self.chat_friend(friend, " ".join(msg))
+            if(self.login_status):
+                if command.startswith('chat_friend'):
+                    _, friend, *msg = command.split()
+                    self.chat_friend(friend, " ".join(msg))
 
-            elif command.startswith('chat_group'):
-                _, group, key, *msg = command.split()
-                self.chat_group(group, key, " ".join(msg))
+                elif command.startswith('chat_group'):
+                    _, group, key, *msg = command.split()
+                    self.chat_group(group, key, " ".join(msg))
 
-            elif command.startswith('login'):
-                _,username = command.split()
-            
-                self.login(username)
+                elif command == 'logout':
+                    self.logout()
 
-            elif command == 'logout':
-                self.logout()
-
-            elif command == 'close':
-                self.send_command('close')
-                break
+                elif command =='list:cinners':
+                    self.list_cinners()
+                else:
+                    print('Comando inválido. Tente novamente.')
 
             else:
-                self.send_command(command)  ### (Novo: Agora envia qualquer comando diretamente)
+                if command.startswith('login'):
+                    _,username = command.split()
+                    self.login(username)
+                
+
+                else:
+                    print('Comando inválido. Tente novamente.')
 
         self.client_socket.close()
 
