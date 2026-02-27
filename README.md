@@ -14,22 +14,15 @@ Projeto da cadeira de Infraestrutura de Comunicação do CIn-UFPE para implement
 📁 IF678-ChatCIn
 │
 ├── 📁 project_1
-│   ├── 📁 client
-│   │   ├── 📁 files  # Armazena os arquivos do cliente
-│   │   ├── client.py  # Código principal do cliente
-│   │
-│   ├── 📁 server
-│   │   ├── 📁 files  # Armazena os arquivos do servidor
-│   │   ├── server.py  # Código principal do servidor
+│   ├── 📁 files  # Armazena os arquivos
+│   ├── client.py  # Código principal do cliente
+│   ├── server.py  # Código principal do servidor
 │
 ├── 📁 project_2
-│   ├── 📁 client
-│   │   ├── client.py  # Cliente utilizando RDT 3.0
-│   │   ├── rdt.py  # Implementação do RDT 3.0
-│   │
-│   ├── 📁 server
-│   │   ├── server.py  # Servidor utilizando RDT 3.0
-│   │   ├── rdt.py  # Implementação do RDT 3.0
+│   ├── client.py  # Cliente utilizando RDT 3.0
+│   ├── rdt.py  # Implementação do RDT 3.0
+│   ├── server.py  # Servidor utilizando RDT 3.0
+│   ├── rdt.py  # Implementação do RDT 3.0
 │
 ├── 📁 project_3
 │   ├── 📁 client  # Implementação do chat em grupo
@@ -48,15 +41,15 @@ A implementação foi feita de forma colaborativa, onde cada membro participou d
 1. Certifique-se de ter o Python instalado.
 2. Entre na pasta `server` do projeto correspondente e inicie o servidor:
    ```sh
-   cd project_1/server  # ou project_2/server ou project_3/server
+   cd project_1
    python3 server.py
    ```
 3. Em outra instância do terminal, entre na pasta `client` e execute o cliente:
    ```sh
-   cd project_1/client  # ou project_2/client ou project_3/client
+   cd project_1
    python3 client.py
    ```
-4. No **Project 1**, teste o envio e recepção de arquivos.
+4. No **Project 1**, teste o envio e recepção de arquivos usando o protocolo UDP.
 5. No **Project 2**, teste a confiabilidade do RDT 3.0.
 6. No **Project 3**, teste o funcionamento do chat em grupo.
 

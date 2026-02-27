@@ -2,7 +2,7 @@ from socket import *
 
 # Constants
 HOST = "localhost"
-SERVER_PORT = 1057
+SERVER_PORT = 3562
 SERVER_ADDRESS = (HOST, SERVER_PORT)
 BUFFER_SIZE = 1024
 FILE_DIRECTORY = "files/"
